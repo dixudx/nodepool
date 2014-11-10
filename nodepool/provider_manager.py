@@ -428,6 +428,14 @@ class ProviderManager(TaskManager):
     def getServer(self, server_id):
         return self.submitTask(GetServerTask(server_id=server_id))
 
+    def getFixedIP(self, server, version=4):
+        if server:
+            addr = server.get('addresses')
+            for (net_name, net_info) in addr.items():
+                if int(net_info[0].get('version')) == version:
+                    return net_info[0].get('addr')
+        return None
+
     def getFloatingIP(self, ip_id):
         return self.submitTask(GetFloatingIPTask(ip_id=ip_id))
 

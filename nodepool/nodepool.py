@@ -400,8 +400,14 @@ class NodeLauncher(threading.Thread):
 
         ip = server.get('public_v4')
         if not ip and self.manager.hasExtension('os-floating-ips'):
-            ip = self.manager.addPublicIP(server_id,
+            try:
+                ip = self.manager.addPublicIP(server_id,
                                           pool=self.provider.pool)
+                if not ip:
+                    raise
+            except:
+                ip = self.manager.getFixedIP(server, version=4)
+        
         if not ip:
             raise LaunchNetworkException("Unable to find public IP of server")
 
@@ -674,8 +680,14 @@ class SubNodeLauncher(threading.Thread):
 
         ip = server.get('public_v4')
         if not ip and self.manager.hasExtension('os-floating-ips'):
-            ip = self.manager.addPublicIP(server_id,
+            try:
+                ip = self.manager.addPublicIP(server_id,
                                           pool=self.provider.pool)
+                if not ip:
+                    raise
+            except:
+                ip = self.manager.getFixedIP(server, version=4)
+        
         if not ip:
             raise LaunchNetworkException("Unable to find public IP of server")
 
@@ -983,8 +995,14 @@ class SnapshotImageUpdater(ImageUpdater):
 
         ip = server.get('public_v4')
         if not ip and self.manager.hasExtension('os-floating-ips'):
-            ip = self.manager.addPublicIP(server_id,
+            try:
+                ip = self.manager.addPublicIP(server_id,
                                           pool=self.provider.pool)
+                if not ip:
+                    raise
+            except:
+                ip = self.manager.getFixedIP(server, version=4)
+        
         if not ip:
             raise Exception("Unable to find public IP of server")
         server['public_v4'] = ip
@@ -1042,6 +1060,14 @@ class SnapshotImageUpdater(ImageUpdater):
             # We have connected to the node but couldn't do anything as root
             # try distro specific users, since we know ssh is up (a timeout
             # didn't occur), we can connect with a very sort timeout.
+            try:
+                conn_kwargs = dict(log=log)
+                conn_kwargs['key_filename'] = self.image.private_key
+                host = utils.ssh_connect(server['public_v4'], 'root', 
+                                         conn_kwargs, timeout=CONNECT_TIMEOUT)
+            except:
+                pass
+            
             for username in ['ubuntu', 'fedora', 'cloud-user', 'centos']:
                 try:
                     host = utils.ssh_connect(server['public_v4'], username,
